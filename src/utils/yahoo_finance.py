@@ -38,7 +38,6 @@ def download_yf(
     
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.droplevel(0)
-        print(data.columns)
 
     # Lagre til parquet cache
     parquet_cache.write_parquet_cache(
