@@ -8,7 +8,7 @@ from utils.yahoo_finance import download_yf
 def backtest():
     # Hent data
     data = download_yf("BTC-USD", period="6mo", interval="4h")
-    print(data.columns)
+
     #if isinstance(data.columns, pd.MultiIndex):
     #    data.columns = data.columns.get_level_values(0)
 
@@ -17,9 +17,10 @@ def backtest():
     data["RSI"] = RSIIndicator(data["Close"], window=14).rsi()
 
     # Handelsregel
-    data["signal"] = 0
-    data.loc[(data["RSI"] < 30) & (data["Close"] > data["EMA20"]), "signal"] = 1     # kjøp
-    data.loc[(data["RSI"] > 70) & (data["Close"] < data["EMA20"]), "signal"] = -1    # selg
+    data["signal"] = 00
+    data.loc[(data["RSI"] < 60) & (data["Close"] > data["EMA20"]), "signal"] = 1     # kjøp
+    data.loc[(data["RSI"] > 40) & (data["Close"] < data["EMA20"]), "signal"] = -1    # selg
+
 
     # Beregn avkastning
     data["return"] = data["Close"].pct_change()
@@ -28,16 +29,21 @@ def backtest():
     # Kumulativ avkastning
     data["cum_price"] = (1 + data["return"]).cumprod()
     data["cum_strategy"] = (1 + data["strategy_return"]).cumprod()
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(11, 6))
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(11, 6))
 
     # Plot
     #plt.figure(figsize=(10,5))
-    ax1.plot(data.index, data["cum_price"], label="Kjøp & hold")
-    ax1.plot(data.index, data["cum_strategy"], label="Strategi")
-    ax1.plot(data.index, data["EMA20"], label="EMA20")
+    ema, = ax1.plot(data.index, data["EMA20"], label="EMA20")
+    close, = ax1.plot(data.index, data["Close"], label="Close")
     ax1.legend()
     ax1.set_title("RSI+EMA Backtest")
+
+
+
+    # Create a single legend
+    #lines = [ema, close, hold]
+    #labels = [l.get_label() for l in lines]
+    #ax2.legend(lines, labels, loc='upper left') # Adjust loc as needed
 
     
     ax2.plot(data.index, data["RSI"], label="RSI(14)", linewidth=1)
@@ -45,6 +51,14 @@ def backtest():
     ax2.axhline(30, linestyle="--")
     ax2.legend()
     ax2.set_title("RSI")
+
+
+    
+    hold, =ax3.plot(data.index, (data["cum_price"]-1)*100, label="Kjøp & hold")
+    strategy, = ax3.plot(data.index, (data["cum_strategy"]-1)*100, label="Strategi")
+    ax3.legend()
+    ax3.set_ylabel('avkastning (%)')
+    ax3.tick_params(axis='y')
 
     plt.tight_layout()
     plt.show()
