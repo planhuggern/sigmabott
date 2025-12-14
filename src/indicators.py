@@ -38,5 +38,9 @@ def plot_indicators():
     plt.show()
 
 
-if __name__ == "__main__":
+def main():
     plot_indicators()
+
+
+if __name__ == "__main__":
+    main()
