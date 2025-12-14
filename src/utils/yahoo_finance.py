@@ -2,13 +2,9 @@ import yfinance as yf
 import pandas as pd
 from . import parquet_cache
 
+
 def download_yf(
-    symbols,
-    period="6mo",
-    interval="1h",
-    price_type="Close",
-    cache=True,
-    outdir="data"
+    symbols, period="6mo", interval="1h", price_type="Close", cache=True, outdir="data"
 ) -> pd.DataFrame:
     """
     Henter historiske data fra Yahoo Finance for én eller flere tickere.
@@ -27,15 +23,16 @@ def download_yf(
 
     # Normaliser filnavn
     fname = "-".join(symbols) if isinstance(symbols, list) else symbols
-    filepath = outdir + '\\' + f"{fname}_{interval}"
+    filepath = outdir + "\\" + f"{fname}_{interval}"
     data = parquet_cache.read_parquet_cache(filepath, max_age_s=600)
 
-    
     # Hent data
-    data = yf.download(symbols, period=period, interval=interval, group_by="ticker", progress=False)
+    data = yf.download(
+        symbols, period=period, interval=interval, group_by="ticker", progress=False
+    )
     if data is None:
         raise NameError(f"Ticker: {symbols} error")
-    
+
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.droplevel(0)
 
