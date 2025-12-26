@@ -45,7 +45,7 @@ git remote add origin git@github.com:espenhoh/sigmabott.git
 
 ## Kjør prosjekt
 
-` uv run src/test_env.py `
+` uv run src/main.py `
 
 
 ## Studie

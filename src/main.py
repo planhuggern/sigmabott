@@ -1,5 +1,11 @@
+import sys
 import inquirer
+from pathlib import Path
 from src import backtest_rsi_ema, indicators, log_return
+
+# Add the project root to the Python path
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
 
 
 def display_menu():
