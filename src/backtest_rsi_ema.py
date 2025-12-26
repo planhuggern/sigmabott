@@ -1,24 +1,22 @@
-import yfinance as yf
-import pandas as pd
 import matplotlib.pyplot as plt
-from ta.trend import EMAIndicator
-from ta.momentum import RSIIndicator
 from utils.yahoo_finance import download_yf
+from strategies import EMAStrategy, RSIStrategy
 
 
 def backtest():
     # Hent data
     data = download_yf("BTC-USD", period="6mo", interval="4h")
 
-    # if isinstance(data.columns, pd.MultiIndex):
-    #    data.columns = data.columns.get_level_values(0)
+    # Initialize strategies
+    ema_strategy = EMAStrategy(ema_window=20)
+    rsi_strategy = RSIStrategy(rsi_window=14)
 
-    # Indikatorer
-    data["EMA20"] = EMAIndicator(data.Close, window=20).ema_indicator()
-    data["RSI"] = RSIIndicator(data["Close"], window=14).rsi()
+    # Apply strategies
+    data = ema_strategy.generate_signals(data)
+    data = rsi_strategy.generate_signals(data)
 
     # Handelsregel
-    data["signal"] = 00
+    data["signal"] = 0
     data.loc[(data["RSI"] < 60) & (data["Close"] > data["EMA20"]), "signal"] = 1  # kjøp
     data.loc[(data["RSI"] > 40) & (data["Close"] < data["EMA20"]), "signal"] = (
         -1
@@ -69,7 +67,7 @@ def backtest():
 
 
 def main():
-    backtest() 
+    backtest()
 
 
 if __name__ == "__main__":
