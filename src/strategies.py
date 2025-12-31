@@ -31,9 +31,9 @@ class EMAStrategy(Strategy):
         data[f"EMA{self.ema_window}"] = EMAIndicator(
             data["Close"], window=self.ema_window
         ).ema_indicator()
-        data["signal"] = 0
-        data.loc[data["Close"] > data[f"EMA{self.ema_window}"], "signal"] = 1  # Buy
-        data.loc[data["Close"] < data[f"EMA{self.ema_window}"], "signal"] = -1  # Sell
+        data["ema_signal"] = 0
+        data.loc[data["Close"] > data[f"EMA{self.ema_window}"], "ema_signal"] = 1  # Buy
+        data.loc[data["Close"] < data[f"EMA{self.ema_window}"], "ema_signal"] = -1  # Sell
         return data
 
 
@@ -45,7 +45,20 @@ class RSIStrategy(Strategy):
 
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         data["RSI"] = RSIIndicator(data["Close"], window=self.rsi_window).rsi()
+        data["rsi_signal"] = 0
+        data.loc[data["RSI"] < self.oversold, "rsi_signal"] = 1  # Buy
+        data.loc[data["RSI"] > self.overbought, "rsi_signal"] = -1  # Sell
+        return data
+
+
+class CombinedStrategy(Strategy):
+    def __init__(self, strategies: list[Strategy]):
+        self.strategies = strategies
+
+    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         data["signal"] = 0
-        data.loc[data["RSI"] < self.oversold, "signal"] = 1  # Buy
-        data.loc[data["RSI"] > self.overbought, "signal"] = -1  # Sell
+        for strategy in self.strategies:
+            data = strategy.generate_signals(data)
+            # Combine signals using logical OR (adjust logic as needed)
+            data["signal"] += data.get("signal", 0)
         return data

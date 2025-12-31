@@ -1,26 +1,21 @@
 import matplotlib.pyplot as plt
 from utils.yahoo_finance import download_yf
-from strategies import EMAStrategy, RSIStrategy
+from strategies import CombinedStrategy, EMAStrategy, RSIStrategy
 
 
 def backtest():
     # Hent data
     data = download_yf("BTC-USD", period="6mo", interval="4h")
 
-    # Initialize strategies
+    # Initialize individual strategies
     ema_strategy = EMAStrategy(ema_window=20)
     rsi_strategy = RSIStrategy(rsi_window=14)
 
-    # Apply strategies
-    data = ema_strategy.generate_signals(data)
-    data = rsi_strategy.generate_signals(data)
+    # Initialize combined strategy with individual strategies
+    combined_strategy = CombinedStrategy(strategies=[ema_strategy, rsi_strategy])
 
-    # Handelsregel
-    data["signal"] = 0
-    data.loc[(data["RSI"] < 60) & (data["Close"] > data["EMA20"]), "signal"] = 1  # kjøp
-    data.loc[(data["RSI"] > 40) & (data["Close"] < data["EMA20"]), "signal"] = (
-        -1
-    )  # selg
+    # Apply combined strategy
+    data = combined_strategy.generate_signals(data)
 
     # Beregn avkastning
     data["return"] = data["Close"].pct_change()
