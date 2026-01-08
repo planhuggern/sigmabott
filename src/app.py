@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from src.utils.yahoo_finance import download_yf
-from src.strategies import CombinedStrategy, EMAStrategy, RSIStrategy
-from src.event_manager import EventManager
+from src.backtest_engine import BacktestEngine, BacktestConfig
 
 st.set_page_config(page_title="SigmaBot Trading", page_icon="📈", layout="wide")
 
@@ -50,85 +48,52 @@ st.sidebar.markdown("---")
 
 # Run backtest button
 if st.sidebar.button("🚀 Run Backtest", type="primary"):
-    with st.spinner(f"Downloading {symbol} data..."):
+    with st.spinner(f"Running backtest for {symbol}..."):
         try:
-            # Download data
-            data = download_yf(symbol, period=period, interval=interval)
+            # Create configuration
+            config = BacktestConfig(
+                symbol=symbol,
+                period=period,
+                interval=interval,
+                use_ema=use_ema,
+                ema_window=ema_window,
+                use_rsi=use_rsi,
+                rsi_window=rsi_window,
+                rsi_oversold=rsi_oversold,
+                rsi_overbought=rsi_overbought
+            )
             
-            if data.empty:
-                st.error("No data available for this symbol")
-                st.stop()
-            
-            # Initialize event manager
-            event_manager = EventManager()
-            
-            # Initialize strategies
-            strategies = []
-            if use_ema:
-                strategies.append(EMAStrategy(ema_window=ema_window, event_manager=event_manager))
-            if use_rsi:
-                strategies.append(RSIStrategy(
-                    rsi_window=rsi_window,
-                    overbought=rsi_overbought,
-                    oversold=rsi_oversold,
-                    event_manager=event_manager
-                ))
-            
-            if not strategies:
-                st.error("Please select at least one strategy")
-                st.stop()
-            
-            # Apply combined strategy
-            combined_strategy = CombinedStrategy(strategies=strategies)
-            data = combined_strategy.generate_signals(data)
-            
-            # Calculate returns
-            data["return"] = data["Close"].pct_change()
-            data["strategy_return"] = data["signal"].shift(1) * data["return"]
-            
-            # Cumulative returns
-            data["cum_return"] = (1 + data["return"]).cumprod()
-            data["cum_strategy"] = (1 + data["strategy_return"]).cumprod()
-            
-            # Calculate metrics
-            total_return = (data["cum_strategy"].iloc[-1] - 1) * 100
-            buy_hold_return = (data["cum_return"].iloc[-1] - 1) * 100
-            
-            # Calculate max drawdown
-            cummax = data["cum_strategy"].cummax()
-            drawdown = (data["cum_strategy"] - cummax) / cummax
-            max_drawdown = drawdown.min() * 100
-            
-            # Calculate Sharpe ratio (annualized)
-            sharpe_ratio = data["strategy_return"].mean() / data["strategy_return"].std() * (252 ** 0.5) if interval == "1d" else data["strategy_return"].mean() / data["strategy_return"].std()
+            # Run backtest
+            engine = BacktestEngine()
+            result = engine.run_backtest(config)
             
             # Store in session state
-            st.session_state.data = data
-            st.session_state.total_return = total_return
-            st.session_state.buy_hold_return = buy_hold_return
-            st.session_state.max_drawdown = max_drawdown
-            st.session_state.sharpe_ratio = sharpe_ratio
-            st.session_state.symbol = symbol
+            st.session_state.result = result
+            st.success(f"✅ Backtest completed for {symbol}!")
             
+        except ValueError as e:
+            st.error(f"Configuration error: {str(e)}")
+            st.stop()
         except Exception as e:
             st.error(f"Error running backtest: {str(e)}")
             st.stop()
 
 # Display results if available
-if hasattr(st.session_state, 'data'):
-    data = st.session_state.data
+if hasattr(st.session_state, 'result'):
+    result = st.session_state.result
+    data = result.data
     
     # Metrics row
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Strategy Return", f"{st.session_state.total_return:.2f}%")
+        st.metric("Strategy Return", f"{result.total_return:.2f}%")
     with col2:
-        st.metric("Buy & Hold Return", f"{st.session_state.buy_hold_return:.2f}%")
+        st.metric("Buy & Hold Return", f"{result.buy_hold_return:.2f}%")
     with col3:
-        st.metric("Max Drawdown", f"{st.session_state.max_drawdown:.2f}%")
+        st.metric("Max Drawdown", f"{result.max_drawdown:.2f}%")
     with col4:
-        st.metric("Sharpe Ratio", f"{st.session_state.sharpe_ratio:.2f}")
+        st.metric("Sharpe Ratio", f"{result.sharpe_ratio:.2f}")
     
     st.markdown("---")
     
@@ -278,7 +243,7 @@ if hasattr(st.session_state, 'data'):
         st.download_button(
             label="📥 Download Full Dataset",
             data=csv,
-            file_name=f"{st.session_state.symbol}_backtest.csv",
+            file_name=f"{result.symbol}_backtest.csv",
             mime="text/csv"
         )
 

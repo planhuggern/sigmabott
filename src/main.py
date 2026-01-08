@@ -9,7 +9,7 @@ from src.logger import Logger
 def start_gui():
     """Start the Streamlit GUI application."""
     import subprocess
-    subprocess.run([sys.executable, "-m", "streamlit", "run", "src/app.py"])
+    subprocess.run([sys.executable, "-m", "streamlit", "run", "src/Home.py"])
 
 
 def display_menu():
