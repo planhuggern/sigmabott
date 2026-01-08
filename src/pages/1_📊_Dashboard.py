@@ -1,5 +1,5 @@
 """
-Dashboard - Real-time market monitoring
+Dashboard - Sanntidsovervåking av marked
 """
 import streamlit as st
 import pandas as pd
@@ -13,13 +13,13 @@ st.set_page_config(page_title="Dashboard - SigmaBot", page_icon="📊", layout="
 st.title("📊 Live Dashboard")
 
 # Sidebar configuration
-st.sidebar.header("⚙️ Dashboard Settings")
+st.sidebar.header("⚙️ Dashboardinnstillinger")
 
 # Symbol watchlist
-st.sidebar.subheader("📋 Watchlist")
+st.sidebar.subheader("📋 Overvåkningsliste")
 default_symbols = ["BTC-USD", "ETH-USD", "AAPL", "TSLA"]
 watchlist = st.sidebar.text_area(
-    "Symbols (one per line)",
+    "Symboler (ett per linje)",
     value="\n".join(default_symbols),
     height=100
 )
@@ -27,27 +27,27 @@ symbols = [s.strip() for s in watchlist.split("\n") if s.strip()]
 
 # Time settings
 interval = st.sidebar.selectbox(
-    "Interval",
+    "Intervall",
     options=["1h", "4h", "1d", "1wk"],
     index=2
 )
 
 period = st.sidebar.selectbox(
-    "Period",
+    "Periode",
     options=["1d", "5d", "1mo", "3mo", "6mo", "1y"],
     index=2
 )
 
 # Refresh button
-if st.sidebar.button("🔄 Refresh Data", type="primary"):
+if st.sidebar.button("🔄 Oppdater data", type="primary"):
     st.cache_data.clear()
     st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.caption("Data updates every refresh")
+st.sidebar.caption("Data oppdateres ved hver oppdatering")
 
 # Main content
-st.markdown("### Market Overview")
+st.markdown("### Markedsoversikt")
 
 # Create columns for metrics
 metric_cols = st.columns(len(symbols))
@@ -88,7 +88,7 @@ for idx, symbol in enumerate(symbols):
 st.markdown("---")
 
 # Detailed view
-st.markdown("### Detailed Charts")
+st.markdown("### Detaljerte grafer")
 
 # Tabs for each symbol
 tabs = st.tabs(symbols)
@@ -105,7 +105,7 @@ for idx, symbol in enumerate(symbols):
                 rows=2, cols=1,
                 shared_xaxes=True,
                 vertical_spacing=0.03,
-                subplot_titles=(f'{symbol} Price', 'Volume'),
+                subplot_titles=(f'{symbol} Pris', 'Volum'),
                 row_heights=[0.7, 0.3]
             )
             
@@ -117,7 +117,7 @@ for idx, symbol in enumerate(symbols):
                     high=data['High'],
                     low=data['Low'],
                     close=data['Close'],
-                    name='Price'
+                    name='Pris'
                 ),
                 row=1, col=1
             )
@@ -130,7 +130,7 @@ for idx, symbol in enumerate(symbols):
                 go.Bar(
                     x=data.index,
                     y=data['Volume'],
-                    name='Volume',
+                    name='Volum',
                     marker_color=colors
                 ),
                 row=2, col=1
@@ -143,24 +143,24 @@ for idx, symbol in enumerate(symbols):
                 hovermode='x unified'
             )
             
-            fig.update_yaxes(title_text="Price", row=1, col=1)
-            fig.update_yaxes(title_text="Volume", row=2, col=1)
+            fig.update_yaxes(title_text="Pris", row=1, col=1)
+            fig.update_yaxes(title_text="Volum", row=2, col=1)
             
             st.plotly_chart(fig, use_container_width=True)
             
             # Stats
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("Current Price", f"${symbol_data['price']:.2f}")
+                st.metric("Nåværende pris", f"${symbol_data['price']:.2f}")
             with col2:
-                st.metric("Period High", f"${symbol_data['high']:.2f}")
+                st.metric("Periode høy", f"${symbol_data['high']:.2f}")
             with col3:
-                st.metric("Period Low", f"${symbol_data['low']:.2f}")
+                st.metric("Periode lav", f"${symbol_data['low']:.2f}")
             with col4:
-                st.metric("Data Points", len(data))
+                st.metric("Datapunkter", len(data))
         else:
-            st.error(f"Could not load data for {symbol}")
+            st.error(f"Kunne ikke laste data for {symbol}")
 
 st.markdown("---")
-st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-st.caption("**To exit and return to terminal:** Press `Ctrl+C` in the terminal window")
+st.caption(f"Sist oppdatert: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+st.caption("**For å avslutte og returnere til terminalen:** Trykk `Ctrl+C` i terminalvinduet")

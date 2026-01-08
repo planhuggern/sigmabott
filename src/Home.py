@@ -12,7 +12,7 @@ st.set_page_config(
 
 # Header
 st.title("📈 SigmaBot")
-st.subheader("Advanced Trading Strategy Platform")
+st.subheader("Avansert handelsstrategiplatform")
 
 st.markdown("---")
 
@@ -21,26 +21,26 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     st.markdown("""
-    ## Welcome to SigmaBot!
+    ## Velkommen til SigmaBot!
     
-    SigmaBot is a comprehensive trading strategy platform that helps you analyze, 
-    backtest, and monitor trading strategies for cryptocurrencies and stocks.
+    SigmaBot er en omfattende handelsstrategiplatform som hjelper deg med å analysere, 
+    backteste og overvåke handelsstrategier for kryptovaluta og aksjer.
     
-    ### 🚀 Features
+    ### 🚀 Funksjoner
     
-    - **📊 Live Dashboard** - Monitor real-time market data and strategy performance
-    - **🔬 Strategy Backtester** - Test your trading strategies on historical data
-    - **📈 Technical Indicators** - EMA, RSI, and more
-    - **📉 Performance Analytics** - Detailed metrics, drawdown analysis, Sharpe ratio
-    - **💾 Data Export** - Export results for further analysis
+    - **📊 Live Dashboard** - Overvåk markedsdata og strategiytelse i sanntid
+    - **🔬 Strategitester** - Test handelsstrategiene dine på historiske data
+    - **📈 Tekniske indikatorer** - EMA, RSI, og mer
+    - **📉 Ytelsesanalyse** - Detaljerte metrics, drawdown-analyse, Sharpe ratio
+    - **💾 Dataeksport** - Eksporter resultater for videre analyse
     
-    ### 🎯 Get Started
+    ### 🎯 Kom i gang
     
-    Choose a section from the sidebar to begin:
+    Velg en seksjon fra sidebaren for å begynne:
     """)
     
     # Navigation cards
-    st.markdown("### 📱 Navigate to:")
+    st.markdown("### 📱 Naviger til:")
     
     nav_col1, nav_col2 = st.columns(2)
     
@@ -48,33 +48,33 @@ with col1:
         st.info("""
         **📊 Dashboard**
         
-        View live market data and monitor your strategies in real-time.
-        Track multiple symbols and get instant insights.
+        Se live markedsdata og overvåk strategiene dine i sanntid.
+        Følg flere symboler og få umiddelbar innsikt.
         """)
     
     with nav_col2:
         st.info("""
         **🔬 Backtest**
         
-        Test your trading strategies on historical data.
-        Analyze performance, optimize parameters, and validate ideas.
+        Test handelsstrategiene dine på historiske data.
+        Analyser ytelse, optimaliser parametere og valider ideer.
         """)
 
 with col2:
-    st.markdown("### 📊 Quick Stats")
+    st.markdown("### 📊 Rask oversikt")
     
     # Placeholder stats - in a real app these would be dynamic
-    st.metric("Supported Symbols", "1000+")
-    st.metric("Strategies Available", "2+")
-    st.metric("Data Sources", "Yahoo Finance")
+    st.metric("Støttede symboler", "1000+")
+    st.metric("Tilgjengelige strategier", "2+")
+    st.metric("Datakilder", "Yahoo Finance")
     
     st.markdown("---")
     
-    st.markdown("### 🎓 Learn More")
+    st.markdown("### 🎓 Lær mer")
     st.markdown("""
-    - [Candlestick Patterns](https://www.investopedia.com/trading/candlestick-charting-what-is-it/)
-    - [EMA Strategy](https://www.investopedia.com/terms/e/ema.asp)
-    - [RSI Indicator](https://www.investopedia.com/terms/r/rsi.asp)
+    - [Candlestick-mønstre](https://www.investopedia.com/trading/candlestick-charting-what-is-it/)
+    - [EMA-strategi](https://www.investopedia.com/terms/e/ema.asp)
+    - [RSI-indikator](https://www.investopedia.com/terms/r/rsi.asp)
     - [Backtesting](https://www.investopedia.com/terms/b/backtesting.asp)
     """)
 
@@ -84,7 +84,7 @@ st.markdown("---")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("### 🛠️ Technologies")
+    st.markdown("### 🛠️ Teknologier")
     st.markdown("""
     - Python
     - Streamlit
@@ -94,21 +94,21 @@ with col1:
     """)
 
 with col2:
-    st.markdown("### 📈 Indicators")
+    st.markdown("### 📈 Indikatorer")
     st.markdown("""
-    - EMA (Exponential Moving Average)
+    - EMA (Eksponensielt glidende gjennomsnitt)
     - RSI (Relative Strength Index)
-    - More coming soon...
+    - Flere kommer snart...
     """)
 
 with col3:
     st.markdown("### 💡 Tips")
     st.markdown("""
-    - Start with backtesting
-    - Test multiple timeframes
-    - Compare strategies
-    - Export your data
+    - Start med backtesting
+    - Test flere tidsrammer
+    - Sammenlign strategier
+    - Eksporter dataene dine
     """)
 
 st.markdown("---")
-st.caption("SigmaBot v0.1.0 | Built with Streamlit")
+st.caption("SigmaBot v0.1.0 | Bygget med Streamlit")
