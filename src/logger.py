@@ -1,5 +1,5 @@
 import logging
-from event_manager import Observer
+from src.event_manager import Observer
 
 # Configure the logging module
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

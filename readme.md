@@ -45,7 +45,11 @@ git remote add origin git@github.com:espenhoh/sigmabott.git
 
 ## Kjør prosjekt
 
-` uv run src/main.py `
+` uv run sigmabott `
+
+Eller bruk PowerShell scriptet:
+
+` .\run.ps1 `
 
 
 ## Studie

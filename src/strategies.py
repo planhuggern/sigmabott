@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from ta.trend import EMAIndicator
 from ta.momentum import RSIIndicator
-from event_manager import EventManager
+from src.event_manager import EventManager
 
 
 class Strategy(ABC):

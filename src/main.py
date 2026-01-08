@@ -3,8 +3,8 @@ import inquirer
 from src import backtest_rsi_ema, indicators, log_return
 import sys
 print(sys.executable)
-from event_manager import EventManager
-from logger import Logger
+from src.event_manager import EventManager
+from src.logger import Logger
 
 
 def display_menu():

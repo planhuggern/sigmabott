@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from utils.yahoo_finance import download_yf
-from strategies import CombinedStrategy, EMAStrategy, RSIStrategy
+from src.utils.yahoo_finance import download_yf
+from src.strategies import CombinedStrategy, EMAStrategy, RSIStrategy
 
 
 def backtest():
