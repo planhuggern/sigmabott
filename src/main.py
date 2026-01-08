@@ -2,18 +2,24 @@
 import inquirer
 from src import backtest_rsi_ema, indicators, log_return
 import sys
-print(sys.executable)
 from src.event_manager import EventManager
 from src.logger import Logger
+
+
+def start_gui():
+    """Start the Streamlit GUI application."""
+    import subprocess
+    subprocess.run([sys.executable, "-m", "streamlit", "run", "src/app.py"])
 
 
 def display_menu():
     """Display a menu for the user to select commands."""
     choices = [
-        "Run backtest_rsi_ema module",
-        "Run indicators module",
-        "Run log_return module",
-        "Exit",
+        "🖥️  Launch GUI (Streamlit)",
+        "📊 Run backtest_rsi_ema module",
+        "📈 Run indicators module",
+        "📉 Run log_return module",
+        "❌ Exit",
     ]
 
     questions = [
@@ -30,13 +36,16 @@ def display_menu():
 
 def execute_command(command):
     """Execute the selected command."""
-    if command == "Run backtest_rsi_ema module":
+    if command == "🖥️  Launch GUI (Streamlit)":
+        print("Launching Streamlit GUI...")
+        start_gui()
+    elif command == "📊 Run backtest_rsi_ema module":
         backtest_rsi_ema.main()
-    elif command == "Run indicators module":
+    elif command == "📈 Run indicators module":
         indicators.main()
-    elif command == "Run log_return module":
+    elif command == "📉 Run log_return module":
         log_return.main()
-    elif command == "Exit":
+    elif command == "❌ Exit":
         print("Exiting...")
         exit()
 

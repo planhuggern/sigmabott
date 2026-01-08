@@ -47,6 +47,8 @@ git remote add origin git@github.com:espenhoh/sigmabott.git
 
 ` uv run sigmabott `
 
+Velg "Launch GUI (Streamlit)" fra menyen for web interface, eller kjør terminal modulene direkte.
+
 Eller bruk PowerShell scriptet:
 
 ` .\run.ps1 `
