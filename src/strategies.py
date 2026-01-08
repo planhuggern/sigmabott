@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from ta.trend import EMAIndicator
 from ta.momentum import RSIIndicator
+from event_manager import EventManager
 
 
 class Strategy(ABC):
@@ -24,30 +25,40 @@ class Strategy(ABC):
 
 
 class EMAStrategy(Strategy):
-    def __init__(self, ema_window: int):
+    def __init__(self, ema_window: int, event_manager: EventManager):
         self.ema_window = ema_window
+        self.event_manager = event_manager
 
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         data[f"EMA{self.ema_window}"] = EMAIndicator(
             data["Close"], window=self.ema_window
         ).ema_indicator()
-        data["ema_signal"] = 0
-        data.loc[data["Close"] > data[f"EMA{self.ema_window}"], "ema_signal"] = 1  # Buy
-        data.loc[data["Close"] < data[f"EMA{self.ema_window}"], "ema_signal"] = -1  # Sell
+        data["signal"] = 0
+        data.loc[data["Close"] > data[f"EMA{self.ema_window}"], "signal"] = 1  # Buy
+        data.loc[data["Close"] < data[f"EMA{self.ema_window}"], "signal"] = -1  # Sell
+
+        # Notify observers
+        self.event_manager.notify("signal_generated", {"strategy": "EMA", "data": data})
         return data
 
 
 class RSIStrategy(Strategy):
-    def __init__(self, rsi_window: int, overbought: int = 70, oversold: int = 30):
+    def __init__(
+        self, rsi_window: int, overbought: int, oversold: int, event_manager: EventManager
+    ):
         self.rsi_window = rsi_window
         self.overbought = overbought
         self.oversold = oversold
+        self.event_manager = event_manager
 
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         data["RSI"] = RSIIndicator(data["Close"], window=self.rsi_window).rsi()
-        data["rsi_signal"] = 0
-        data.loc[data["RSI"] < self.oversold, "rsi_signal"] = 1  # Buy
-        data.loc[data["RSI"] > self.overbought, "rsi_signal"] = -1  # Sell
+        data["signal"] = 0
+        data.loc[data["RSI"] < self.oversold, "signal"] = 1  # Buy
+        data.loc[data["RSI"] > self.overbought, "signal"] = -1  # Sell
+
+        # Notify observers
+        self.event_manager.notify("signal_generated", {"strategy": "RSI", "data": data})
         return data
 
 

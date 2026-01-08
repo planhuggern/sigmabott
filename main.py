@@ -3,6 +3,8 @@ import inquirer
 from src import backtest_rsi_ema, indicators, log_return
 import sys
 print(sys.executable)
+from event_manager import EventManager
+from logger import Logger
 
 
 def display_menu():
@@ -40,6 +42,10 @@ def execute_command(command):
 
 
 def main():
+    event_manager = EventManager()
+    logger = Logger()
+    event_manager.subscribe(logger)
+
     while True:
         command = display_menu()
         execute_command(command)
