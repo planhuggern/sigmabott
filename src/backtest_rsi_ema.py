@@ -1,54 +1,40 @@
 import matplotlib.pyplot as plt
-from src.utils.yahoo_finance import download_yf
-from src.strategies import CombinedStrategy, EMAStrategy, RSIStrategy
-from src.event_manager import EventManager
+from src.backtest_engine import run_simple_backtest
 
 
 def backtest():
-    # Hent data
-    data = download_yf("BTC-USD", period="6mo", interval="4h")
-
-    # Initialize event manager
-    event_manager = EventManager()
-
-    # Initialize individual strategies
-    ema_strategy = EMAStrategy(ema_window=20, event_manager=event_manager)
-    rsi_strategy = RSIStrategy(rsi_window=14, overbought=70, oversold=30, event_manager=event_manager)
-
-    # Initialize combined strategy with individual strategies
-    combined_strategy = CombinedStrategy(strategies=[ema_strategy, rsi_strategy])
-
-    # Apply combined strategy
-    data = combined_strategy.generate_signals(data)
-
-    # Beregn avkastning
-    data["return"] = data["Close"].pct_change()
-    data["strategy_return"] = data["signal"].shift(1) * data["return"]
-
-    # Kumulativ avkastning
-    data["cum_price"] = (1 + data["return"]).cumprod()
-    data["cum_strategy"] = (1 + data["strategy_return"]).cumprod()
+    """Run backtest using the backtest engine and display results with matplotlib."""
+    # Run backtest using the engine
+    result = run_simple_backtest(
+        symbol="BTC-USD",
+        period="6mo",
+        interval="4h",
+        ema_window=20,
+        rsi_window=14,
+        rsi_oversold=30,
+        rsi_overbought=70
+    )
+    
+    data = result.data
+    
+    # Create visualization
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(11, 6))
 
-    # Plot
-    # plt.figure(figsize=(10,5))
+    # EMA and Close price
     (ema,) = ax1.plot(data.index, data["EMA20"], label="EMA20")
     (close,) = ax1.plot(data.index, data["Close"], label="Close")
     ax1.legend()
     ax1.set_title("RSI+EMA Backtest")
 
-    # Create a single legend
-    # lines = [ema, close, hold]
-    # labels = [l.get_label() for l in lines]
-    # ax2.legend(lines, labels, loc='upper left') # Adjust loc as needed
-
+    # RSI
     ax2.plot(data.index, data["RSI"], label="RSI(14)", linewidth=1)
     ax2.axhline(70, linestyle="--")
     ax2.axhline(30, linestyle="--")
     ax2.legend()
     ax2.set_title("RSI")
 
-    (hold,) = ax3.plot(data.index, (data["cum_price"] - 1) * 100, label="Kjøp & hold")
+    # Cumulative returns
+    (hold,) = ax3.plot(data.index, (data["cum_return"] - 1) * 100, label="Kjøp & hold")
     (strategy,) = ax3.plot(
         data.index, (data["cum_strategy"] - 1) * 100, label="Strategi"
     )
@@ -59,10 +45,9 @@ def backtest():
     plt.tight_layout()
     plt.show()
 
-    # Enkel statistikk
-    total_ret = data["cum_strategy"].iloc[-1] - 1
-    max_dd = (data["cum_strategy"] / data["cum_strategy"].cummax() - 1).min()
-    print(f"Total avkastning: {total_ret:.2%} | Max drawdown: {max_dd:.2%}")
+    # Print statistics from result
+    print(f"Total avkastning: {result.total_return:.2f}% | Max drawdown: {result.max_drawdown:.2f}%")
+    print(f"Kjøp & hold: {result.buy_hold_return:.2f}% | Sharpe Ratio: {result.sharpe_ratio:.2f}")
 
 
 def main():
