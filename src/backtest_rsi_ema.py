@@ -1,15 +1,19 @@
 import matplotlib.pyplot as plt
 from src.utils.yahoo_finance import download_yf
 from src.strategies import CombinedStrategy, EMAStrategy, RSIStrategy
+from src.event_manager import EventManager
 
 
 def backtest():
     # Hent data
     data = download_yf("BTC-USD", period="6mo", interval="4h")
 
+    # Initialize event manager
+    event_manager = EventManager()
+
     # Initialize individual strategies
-    ema_strategy = EMAStrategy(ema_window=20)
-    rsi_strategy = RSIStrategy(rsi_window=14)
+    ema_strategy = EMAStrategy(ema_window=20, event_manager=event_manager)
+    rsi_strategy = RSIStrategy(rsi_window=14, overbought=70, oversold=30, event_manager=event_manager)
 
     # Initialize combined strategy with individual strategies
     combined_strategy = CombinedStrategy(strategies=[ema_strategy, rsi_strategy])
