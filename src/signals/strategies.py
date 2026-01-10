@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from ta.trend import EMAIndicator
 from ta.momentum import RSIIndicator
+
 from src.event_manager import EventManager
 
 
@@ -59,6 +60,25 @@ class RSIStrategy(Strategy):
 
         # Notify observers
         self.event_manager.notify("signal_generated", {"strategy": "RSI", "data": data})
+        return data
+
+
+class SMAStrategy(Strategy):
+    def __init__(self, sma_window: int, event_manager: EventManager):
+        self.sma_window = sma_window
+        self.event_manager = event_manager
+
+    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+        # Calculate the SMA
+        data[f"SMA{self.sma_window}"] = data["Close"].rolling(window=self.sma_window).mean()
+        data["signal"] = 0
+
+        # Generate signals based on SMA
+        data.loc[data["Close"] > data[f"SMA{self.sma_window}"], "signal"] = 1  # Buy
+        data.loc[data["Close"] < data[f"SMA{self.sma_window}"], "signal"] = -1  # Sell
+
+        # Notify observers
+        self.event_manager.notify("signal_generated", {"strategy": "SMA", "data": data})
         return data
 
 
