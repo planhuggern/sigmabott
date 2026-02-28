@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 import pandas as pd
 from src.utils.yahoo_finance import download_yf
-from src.strategies import Strategy, CombinedStrategy, EMAStrategy, RSIStrategy
+from src.signals.strategies import Strategy, CombinedStrategy, EMAStrategy, RSIStrategy
 from src.event_manager import EventManager
 
 

@@ -4,6 +4,10 @@ Launches Streamlit GUI
 """
 import sys
 import subprocess
+import queue
+
+# Create a global event queue (can be used by Streamlit pages)
+EVENT_QUEUE = queue.Queue()
 
 
 def main():

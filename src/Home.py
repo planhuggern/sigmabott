@@ -3,12 +3,17 @@ SigmaBot - Trading Strategy Platform
 Main landing page
 """
 import streamlit as st
+from src.event_manager import EventManager
 
 st.set_page_config(
     page_title="SigmaBot",
     page_icon="📈",
     layout="wide"
 )
+
+# Initialize shared EventManager in session state
+if "event_manager" not in st.session_state:
+    st.session_state.event_manager = EventManager()
 
 # Header
 st.title("📈 SigmaBot")
@@ -112,3 +117,10 @@ with col3:
 
 st.markdown("---")
 st.caption("SigmaBot v0.1.0 | Bygget med Streamlit")
+
+# Example of sending an event to the EventManager
+def send_event_to_manager(event_type, data):
+    st.session_state.event_manager.notify(event_type, data)
+
+# Example usage
+send_event_to_manager("home_page_loaded", {"page": "Home"})

@@ -46,3 +46,22 @@ def download_yf(
     )
 
     return data
+
+
+def get_symbol_data(symbol, period, interval):
+    try:
+        data = download_yf(symbol, period=period, interval=interval)
+        if not data.empty:
+            latest = data.iloc[-1]
+            previous = data.iloc[-2] if len(data) > 1 else data.iloc[-1]
+            change = ((latest["Close"] - previous["Close"]) / previous["Close"] * 100)
+            return {
+                "price": latest["Close"],
+                "change": change,
+                "high": data["High"].max(),
+                "low": data["Low"].min(),
+                "data": data
+            }
+    except Exception:
+        pass
+    return None

@@ -3,8 +3,13 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from src.backtest_engine import BacktestEngine, BacktestConfig
+from src.event_manager import EventManager
 
 st.set_page_config(page_title="SigmaBot Backtesting", page_icon="🔬", layout="wide")
+
+# Initialize shared EventManager in session state
+if "event_manager" not in st.session_state:
+    st.session_state.event_manager = EventManager()
 
 st.title("🔬 SigmaBot - Strategibacktesting")
 
@@ -70,6 +75,9 @@ if st.sidebar.button("🚀 Kjør Backtest", type="primary"):
             # Store in session state
             st.session_state.result = result
             st.success(f"✅ Backtest fullført for {symbol}!")
+            
+            # Send event to manager
+            st.session_state.event_manager.notify("backtest_started", {"symbol": symbol, "period": period, "interval": interval})
             
         except ValueError as e:
             st.error(f"Konfigurasjonsfeil: {str(e)}")
