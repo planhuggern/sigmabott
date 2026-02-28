@@ -13,7 +13,7 @@ from src.main import EVENT_QUEUE
 from src.event_manager import EventManager
 
 
-st.set_page_config(page_title="Dashboard - SigmaBot", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Dashboard - SigmaBott", page_icon="📊", layout="wide")
 
 
 def inject_styles():
