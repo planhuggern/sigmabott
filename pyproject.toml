@@ -9,7 +9,9 @@ dependencies = [
     "inquirer>=3.4.1",
     "matplotlib>=3.10.7",
     "pandas>=2.3.3",
+    "plotly>=5.0.0",
     "pyarrow>=21.0.0",
+    "streamlit>=1.40.0",
     "ta>=0.11.0",
     "yfinance>=0.2.66",
 ]
