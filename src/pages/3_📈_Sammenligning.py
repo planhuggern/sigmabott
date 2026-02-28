@@ -1,14 +1,14 @@
 """
-Sammenligning - Korrelasjon mellom to aksjer
+Sammenligning - Korrelasjon mellom flere aksjer
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from datetime import datetime
-from src.utils.yahoo_finance import download_yf, get_symbol_data
+from itertools import combinations
+from src.utils.yahoo_finance import get_symbol_data
 
 st.set_page_config(page_title="Sammenligning - SigmaBott", page_icon="📈", layout="wide")
 
@@ -17,19 +17,24 @@ st.markdown("### Aksjesammenligning og korrelasjon")
 # ── Sidebar ──────────────────────────────────────────────────────────────────
 st.sidebar.header("⚙️ Sammenligningsinnstillinger")
 
-symbol_a = st.sidebar.text_input("Aksje A", value="AAPL")
-symbol_b = st.sidebar.text_input("Aksje B", value="MSFT")
+default_symbols = "AAPL\nMSFT\nGOOGL"
+watchlist = st.sidebar.text_area(
+    "Symboler (ett per linje, minst 2)",
+    value=default_symbols,
+    height=120,
+)
+symbols = [s.strip().upper() for s in watchlist.splitlines() if s.strip()]
 
 interval = st.sidebar.selectbox(
     "Intervall",
     options=["1h", "4h", "1d", "1wk"],
-    index=2
+    index=2,
 )
 
 period = st.sidebar.selectbox(
     "Periode",
     options=["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"],
-    index=5
+    index=5,
 )
 
 rolling_window = st.sidebar.slider(
@@ -37,7 +42,7 @@ rolling_window = st.sidebar.slider(
     min_value=5,
     max_value=120,
     value=30,
-    step=1
+    step=1,
 )
 
 if st.sidebar.button("🔄 Oppdater data", type="primary"):
@@ -47,87 +52,134 @@ if st.sidebar.button("🔄 Oppdater data", type="primary"):
 st.sidebar.markdown("---")
 st.sidebar.caption("Data oppdateres ved hver oppdatering")
 
-# ── Data ─────────────────────────────────────────────────────────────────────
-if not symbol_a.strip() or not symbol_b.strip():
-    st.info("Skriv inn to aksjesymboler i sidepanelet for å starte sammenligningen.")
+# ── Validation ────────────────────────────────────────────────────────────────
+if len(symbols) < 2:
+    st.info("Skriv inn minst to aksjesymboler (ett per linje) i sidepanelet.")
     st.stop()
 
-symbol_a = symbol_a.strip().upper()
-symbol_b = symbol_b.strip().upper()
+# ── Load data ─────────────────────────────────────────────────────────────────
+raw: dict = {}
+errors: list = []
 
-data_a = get_symbol_data(symbol_a, period, interval)
-data_b = get_symbol_data(symbol_b, period, interval)
+for sym in symbols:
+    d = get_symbol_data(sym, period, interval)
+    if d and d["data"] is not None:
+        raw[sym] = d
+    else:
+        errors.append(sym)
 
-if not data_a or data_a["data"] is None:
-    st.error(f"Kunne ikke laste data for {symbol_a}. Sjekk at symbolet er gyldig.")
+if errors:
+    st.warning(f"Kunne ikke laste data for: {', '.join(errors)}. De er utelatt.")
+
+valid_symbols = [s for s in symbols if s in raw]
+
+if len(valid_symbols) < 2:
+    st.error("Trenger minst to gyldige symboler for sammenligning.")
     st.stop()
 
-if not data_b or data_b["data"] is None:
-    st.error(f"Kunne ikke laste data for {symbol_b}. Sjekk at symbolet er gyldig.")
-    st.stop()
-
-df_a = data_a["data"]["Close"].rename(symbol_a)
-df_b = data_b["data"]["Close"].rename(symbol_b)
-
-# Align on common dates
-combined = pd.concat([df_a, df_b], axis=1).dropna()
+# Align close prices on common trading days
+close_series = {sym: raw[sym]["data"]["Close"].rename(sym) for sym in valid_symbols}
+combined = pd.concat(close_series.values(), axis=1).dropna()
 
 if combined.empty:
-    st.error("Ingen overlappende handelsdager mellom de to aksjene for valgt periode.")
+    st.error("Ingen overlappende handelsdager mellom aksjene for valgt periode.")
     st.stop()
 
-# Log returns
 returns = combined.pct_change().dropna()
 
-# Pearson correlation (full period)
-corr_full = returns[symbol_a].corr(returns[symbol_b])
-
-# Rolling correlation
-rolling_corr = returns[symbol_a].rolling(rolling_window).corr(returns[symbol_b])
-
-# ── Metrics ───────────────────────────────────────────────────────────────────
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric(f"{symbol_a} siste pris", f"${data_a['price']:.2f}", f"{data_a['change']:+.2f}%")
-with col2:
-    st.metric(f"{symbol_b} siste pris", f"${data_b['price']:.2f}", f"{data_b['change']:+.2f}%")
-with col3:
-    corr_color = "normal"
-    st.metric("Pearson-korrelasjon", f"{corr_full:.4f}")
-with col4:
-    last_rolling = rolling_corr.dropna().iloc[-1] if not rolling_corr.dropna().empty else float("nan")
-    st.metric(f"Rullerende korrelasjon ({rolling_window}p)", f"{last_rolling:.4f}")
+# ── Metrics row ───────────────────────────────────────────────────────────────
+metric_cols = st.columns(len(valid_symbols))
+for idx, sym in enumerate(valid_symbols):
+    with metric_cols[idx]:
+        st.metric(
+            sym,
+            f"${raw[sym]['price']:.2f}",
+            f"{raw[sym]['change']:+.2f}%",
+        )
 
 st.markdown("---")
 
 # ── Plot 1: Normaliserte priser ───────────────────────────────────────────────
-st.markdown("#### Normalisert prisutvikling")
+st.markdown("#### Normalisert prisutvikling (base = 100)")
 
-norm_a = combined[symbol_a] / combined[symbol_a].iloc[0] * 100
-norm_b = combined[symbol_b] / combined[symbol_b].iloc[0] * 100
+COLORS = [
+    "#4C9BE8", "#F4A261", "#A29BFE", "#55EFC4",
+    "#FD79A8", "#FDCB6E", "#E17055", "#74B9FF",
+    "#00B894", "#D63031",
+]
 
 fig_price = go.Figure()
-fig_price.add_trace(go.Scatter(
-    x=combined.index, y=norm_a,
-    name=symbol_a, line=dict(color="#4C9BE8")
-))
-fig_price.add_trace(go.Scatter(
-    x=combined.index, y=norm_b,
-    name=symbol_b, line=dict(color="#F4A261")
-))
+for i, sym in enumerate(valid_symbols):
+    col = COLORS[i % len(COLORS)]
+    norm = combined[sym] / combined[sym].iloc[0] * 100
+    fig_price.add_trace(go.Scatter(
+        x=combined.index, y=norm,
+        name=sym,
+        line=dict(color=col),
+    ))
 fig_price.update_layout(
     height=350,
     yaxis_title="Indeksert pris (base = 100)",
     hovermode="x unified",
-    legend=dict(orientation="h", y=1.02, x=0)
+    legend=dict(orientation="h", y=1.02, x=0),
 )
 st.plotly_chart(fig_price, use_container_width=True)
 
-# ── Plot 2: Rullerende korrelasjon ────────────────────────────────────────────
-st.markdown(f"#### Rullerende {rolling_window}-perioders korrelasjon")
+# ── Plot 2: Korrelasjonsmatrise (heatmap) ─────────────────────────────────────
+st.markdown("#### Korrelasjonsmatrise (hele perioden)")
+
+corr_matrix = returns.corr()
+z = corr_matrix.values
+labels = corr_matrix.columns.tolist()
+
+annotations = []
+for i, row in enumerate(labels):
+    for j, col in enumerate(labels):
+        annotations.append(dict(
+            x=col, y=row,
+            text=f"{z[i][j]:.2f}",
+            showarrow=False,
+            font=dict(color="white" if abs(z[i][j]) > 0.5 else "black", size=13),
+        ))
+
+fig_heat = go.Figure(go.Heatmap(
+    z=z,
+    x=labels,
+    y=labels,
+    colorscale="RdBu",
+    zmin=-1, zmax=1,
+    colorbar=dict(title="Korrelasjon"),
+))
+fig_heat.update_layout(
+    height=max(300, 80 * len(labels)),
+    annotations=annotations,
+    xaxis=dict(side="bottom"),
+)
+st.plotly_chart(fig_heat, use_container_width=True)
+
+st.markdown("---")
+
+# ── Pair selector ─────────────────────────────────────────────────────────────
+all_pairs = [f"{a} / {b}" for a, b in combinations(valid_symbols, 2)]
+
+st.markdown("#### Parvise analyser")
+selected_pair = st.selectbox("Velg par", options=all_pairs)
+
+sym_x, sym_y = [s.strip() for s in selected_pair.split("/")]
+
+# ── Plot 3: Rullerende korrelasjon ────────────────────────────────────────────
+st.markdown(f"##### Rullerende {rolling_window}-perioders korrelasjon  —  {sym_x} vs {sym_y}")
+
+rolling_corr = returns[sym_x].rolling(rolling_window).corr(returns[sym_y])
+last_rolling = rolling_corr.dropna().iloc[-1] if not rolling_corr.dropna().empty else float("nan")
+pearson = returns[sym_x].corr(returns[sym_y])
+
+c1, c2 = st.columns(2)
+c1.metric("Pearson-korrelasjon (hele perioden)", f"{pearson:.4f}")
+c2.metric(f"Rullerende korrelasjon ({rolling_window}p, siste)", f"{last_rolling:.4f}")
 
 fig_roll = go.Figure()
-fig_roll.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.5)
+fig_roll.add_hline(y=0,  line_dash="dash", line_color="gray",  opacity=0.5)
 fig_roll.add_hline(y=1,  line_dash="dot",  line_color="green", opacity=0.4)
 fig_roll.add_hline(y=-1, line_dash="dot",  line_color="red",   opacity=0.4)
 fig_roll.add_trace(go.Scatter(
@@ -136,49 +188,52 @@ fig_roll.add_trace(go.Scatter(
     name=f"Korrelasjon ({rolling_window}p)",
     line=dict(color="#A29BFE"),
     fill="tozeroy",
-    fillcolor="rgba(162,155,254,0.15)"
+    fillcolor="rgba(162,155,254,0.15)",
 ))
 fig_roll.update_layout(
     height=300,
     yaxis=dict(title="Korrelasjon", range=[-1.1, 1.1]),
-    hovermode="x unified"
+    hovermode="x unified",
 )
 st.plotly_chart(fig_roll, use_container_width=True)
 
-# ── Plot 3: Scatter – daglige avkastninger ────────────────────────────────────
-st.markdown("#### Korrelasjonsspredning – daglig avkastning")
+# ── Plot 4: Scatter – daglige avkastninger ────────────────────────────────────
+st.markdown(f"##### Korrelasjonsspredning – daglig avkastning  —  {sym_x} vs {sym_y}")
 
-# OLS trendline
-x_vals = returns[symbol_a].values
-y_vals = returns[symbol_b].values
-m, b = np.polyfit(x_vals, y_vals, 1)
+x_vals = returns[sym_x].values
+y_vals = returns[sym_y].values
+m, b_coef = np.polyfit(x_vals, y_vals, 1)
 x_line = np.linspace(x_vals.min(), x_vals.max(), 200)
-y_line = m * x_line + b
+y_line = m * x_line + b_coef
 
 fig_scatter = go.Figure()
 fig_scatter.add_trace(go.Scatter(
-    x=returns[symbol_a],
-    y=returns[symbol_b],
+    x=returns[sym_x],
+    y=returns[sym_y],
     mode="markers",
     marker=dict(size=5, color="#4C9BE8", opacity=0.6),
     name="Daglig avkastning",
     text=returns.index.strftime("%Y-%m-%d"),
-    hovertemplate="%{text}<br>" + symbol_a + ": %{x:.2%}<br>" + symbol_b + ": %{y:.2%}<extra></extra>"
+    hovertemplate=(
+        "%{text}<br>"
+        + sym_x + ": %{x:.2%}<br>"
+        + sym_y + ": %{y:.2%}<extra></extra>"
+    ),
 ))
 fig_scatter.add_trace(go.Scatter(
     x=x_line,
     y=y_line,
     mode="lines",
     line=dict(color="#F4A261", width=2, dash="dash"),
-    name=f"Trendlinje (β={m:.2f})"
+    name=f"Trendlinje (β={m:.2f})",
 ))
 fig_scatter.update_layout(
     height=450,
-    xaxis_title=f"{symbol_a} daglig avkastning",
-    yaxis_title=f"{symbol_b} daglig avkastning",
+    xaxis_title=f"{sym_x} daglig avkastning",
+    yaxis_title=f"{sym_y} daglig avkastning",
     xaxis=dict(tickformat=".1%"),
     yaxis=dict(tickformat=".1%"),
-    hovermode="closest"
+    hovermode="closest",
 )
 st.plotly_chart(fig_scatter, use_container_width=True)
 
